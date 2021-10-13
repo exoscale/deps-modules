@@ -28,7 +28,7 @@
   (-> dot-deps-edn-file
       (.getParent)
       (Paths/get (into-array String [output-deps-edn-file]))
-      io/file))
+      str))
 
 (defn load-versions
   [versions-file]
