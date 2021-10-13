@@ -15,12 +15,12 @@
    :modules-dir "modules"})
 
 (defn find-modules-deps
-  [dir]
-  (for [^File project (.listFiles (io/file dir))
+  [{:keys [modules-dir input-deps-edn-file]}]
+  (for [^File project (.listFiles (io/file modules-dir))
         ^File project-file (.listFiles project)
         :when (and (.isFile ^File project-file)
                    (= (.getName project-file)
-                      ".deps.edn"))]
+                      input-deps-edn-file))]
     project-file))
 
 (defn deps-edn-out-file
@@ -60,11 +60,11 @@
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [& [opts]]
-  (let [{:as opts :keys [versions-edn-file modules-dir]} (merge defaults opts)
+  (let [{:as opts :keys [versions-edn-file]} (merge defaults opts)
         ;; load .deps-versions.edn
         versions (load-versions versions-edn-file)
         ;; find all deps.edn files in modules
-        deps-edn-in-files (find-modules-deps modules-dir)]
+        deps-edn-in-files (find-modules-deps opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [deps-edn-in-file]
             (println (format "Updating versions from %s" deps-edn-in-file))
