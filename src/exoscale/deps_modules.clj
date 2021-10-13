@@ -46,7 +46,7 @@
                       (-> (reduce (fn [zdep [k v]]
                                     (cond-> zdep
                                       ;; only replace "_" values
-                                      (some-> (z/get zdep k) (z/find-value "_"))
+                                      (some-> (z/get zdep k) (z/find-value '_))
                                       (z/assoc k v)))
                                   zdep
                                   version)

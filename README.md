@@ -2,7 +2,7 @@
 
 Reads `.deps-versions.edn` from project root, which should contain a
 map of dependencies in the tools.deps format then look for all the
-`modules/*/.deps.edn` and substitutes the version when it finds a "_"
+`modules/*/.deps.edn` and substitutes the version when it finds a `_`
 as version in the dependency, then writes out the corresponding
 `modules/*/deps.edn` file, preserving comments/indentation/formatting.
 
