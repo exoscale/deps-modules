@@ -11,18 +11,34 @@ This is meant to be used via tools.deps as a "tool"
 You would have something like that in your root deps.edn file
 
 ```clj
-{:paths ["src"]
- :deps {;; project deps
-       }
+{:deps {org.clojure/clojure {:mvn/version "1.10.2"}}
+ :paths ["src"]
  :aliases
- {:deps-modules {:deps {com.exoscale/deps-modules {:tag "TAG" :sha "SHA"}}
-               :ns-default exoscale.deps-modules}}}
+ {:deps-modules {:deps {exoscale/deps-modules {:git/sha "0c2b6877a131f3d74ef51f5f24ded82a2ae78b1f"
+                                               :git/url "git@github.com:exoscale/deps-modules.git"}}
+                 :ns-default exoscale.deps-modules}}}
 ```
 
 Then you should be able to run it from the root of your project via
 
-`clj -T:deps-modules merge-deps`
+``` shell
 
-## Installation
+❯ tree  -a
+.
+├── deps.edn
+├── .deps-versions.edn
+└── modules
+    ├── foo1
+    │   └── .deps.edn
+    └── foo2
+        └── .deps.edn
 
-## Usage
+❯ clj -T:deps-modules exoscale.deps-modules/merge-deps
+
+Updating versions from modules/foo1/.deps.edn
+Writing modules/foo1/deps.edn
+Updating versions from modules/foo2/.deps.edn
+Writing modules/foo2/deps.edn
+Done merging files
+
+```
