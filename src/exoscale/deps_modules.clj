@@ -34,26 +34,33 @@
   [versions-file]
   (edn/read-string (slurp versions-file)))
 
+(defn- update-deps-versions*
+  [versions zloc]
+  (reduce (fn [zdeps [dep version]]
+            ;; check if we can get to a node for that dep
+            (let [zdep (z/get zdeps dep)]
+              ;; iterate over the keys of that dep version to
+              ;; merge contents, if key is new, add it,
+              ;; otherwise leave old one
+              (if (and zdep (z/get zdep :exo.deps/inherit))
+                (-> (reduce (fn [zdep [k v]]
+                              (z/assoc zdep k v))
+                            zdep
+                            version)
+                    z/up)
+                zdeps)))
+          zloc
+          versions))
+
 (defn update-deps-versions
   [versions deps-file]
-  (let [zloc (z/of-string (slurp deps-file))]
-    (-> (reduce (fn [zdeps [dep version]]
-                  ;; check if we can get to a node for that dep
-                  (let [zdep (z/get zdeps dep)]
-                    ;; iterate over the keys of that dep version to
-                    ;; merge contents, if key is new, add it,
-                    ;; otherwise leave old one
-                    (if (and zdep (z/get zdep :exo.deps/inherit))
-                      (-> (reduce (fn [zdep [k v]]
-                                    (z/assoc zdep k v))
-                                  zdep
-                                  version)
-                          z/up)
-                      zdeps)))
-                (or (z/get zloc :deps)
-                    (throw (ex-info "Could't find :deps in deps.edn file" {})))
-                versions)
-        z/root-string)))
+  (-> (z/of-string (slurp deps-file))
+      (z/prewalk (fn select [zloc]
+                   (contains? #{:deps :extra-deps :override-deps}
+                              (z/sexpr zloc)))
+                 (fn visit [zloc]
+                   (update-deps-versions* versions (z/right zloc))))
+      z/root-string))
 
 (defn merge-deps
   "Entry point via tools.build \"tool\""
@@ -74,5 +81,3 @@
               (spit out-file deps-out)))
           deps-edn-in-files)
     (println "Done merging files")))
-
-;; (merge-deps {})
