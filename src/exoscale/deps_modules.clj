@@ -43,7 +43,7 @@
                     ;; iterate over the keys of that dep version to
                     ;; merge contents, if key is new, add it,
                     ;; otherwise leave old one
-                    (if (and zdep (z/get zdep :exoscale/deps-modules))
+                    (if (and zdep (z/get zdep :exoscale.deps-modules/inherit))
                       (-> (reduce (fn [zdep [k v]]
                                     (z/assoc zdep k v))
                                   zdep
