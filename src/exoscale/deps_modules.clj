@@ -10,7 +10,7 @@
 
 (def defaults
   {:output-deps-edn-file "deps.edn"
-   :input-deps-edn-file ".deps.edn"
+   :input-deps-edn-file "deps.edn"
    :versions-edn-file ".deps-versions.edn"
    :modules-dir "modules"})
 
@@ -41,13 +41,11 @@
                   ;; check if we can get to a node for that dep
                   (let [zdep (z/get zdeps dep)]
                     ;; iterate over the keys of that dep version to
-                    ;; merge contents
-                    (if zdep
+                    ;; merge contents, if key is new, add it,
+                    ;; otherwise leave old one
+                    (if (and zdep (z/get zdep :exoscale/deps-modules))
                       (-> (reduce (fn [zdep [k v]]
-                                    (cond-> zdep
-                                      ;; only replace "_" values
-                                      (some-> (z/get zdep k) (z/find-value '_))
-                                      (z/assoc k v)))
+                                    (z/assoc zdep k v))
                                   zdep
                                   version)
                           z/up)
