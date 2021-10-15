@@ -35,7 +35,7 @@
   (edn/read-string (slurp versions-file)))
 
 (defn- update-deps-versions*
-  [versions zloc]
+  [zloc versions]
   (reduce (fn [zdeps [dep version]]
             ;; check if we can get to a node for that dep
             (let [zdep (z/get zdeps dep)]
@@ -54,13 +54,25 @@
 
 (defn update-deps-versions
   [versions deps-file]
-  (-> (z/of-string (slurp deps-file))
-      (z/prewalk (fn select [zloc]
-                   (contains? #{:deps :extra-deps :override-deps}
-                              (z/sexpr zloc)))
-                 (fn visit [zloc]
-                   (update-deps-versions* versions (z/right zloc))))
-      z/root-string))
+  (let [zloc (z/of-string (slurp deps-file))
+        ;; first merge version on :deps key and then back to root
+        zloc (-> zloc
+                 (z/get :deps)
+                 (update-deps-versions* versions)
+                 z/up)]
+    ;; try merging aliases if found
+    (-> (if-let [zaliases (z/get zloc :aliases)]
+          (z/map-vals (fn [zalias]
+                        (reduce (fn [zalias k]
+                                  (if-let [deps (z/get zalias k)]
+                                    ;; merge and back to zalias
+                                    (z/up (update-deps-versions* deps versions))
+                                    zalias))
+                                zalias
+                                [:extra-deps :override-deps]))
+                      zaliases)
+          zloc)
+        z/root-string)))
 
 (defn merge-deps
   "Entry point via tools.build \"tool\""
