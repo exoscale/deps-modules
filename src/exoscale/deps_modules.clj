@@ -84,7 +84,6 @@
         deps-edn-in-files (find-modules-deps opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [deps-edn-in-file]
-            (println (format "Updating versions from %s" deps-edn-in-file))
             (let [deps-out (update-deps-versions versions
                                                  deps-edn-in-file)
                   out-file (deps-edn-out-file deps-edn-in-file
