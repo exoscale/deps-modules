@@ -14,7 +14,7 @@ You would have something like that in your root deps.edn file
 {:deps {org.clojure/clojure {:mvn/version "1.10.2"}}
  :paths ["src"]
  :aliases
- {:deps-modules {:deps {exoscale/deps-modules {:git/sha "9fb59a75f1bc7e9731cbcd3a12a8360959d59179"
+ {:deps-modules {:deps {exoscale/deps-modules {:git/sha "2b2b47554168062b026d5a9952510acdf95e02b5"
                                                :git/url "git@github.com:exoscale/deps-modules.git"}}
                  :ns-default exoscale.deps-modules}}}
 ```
