@@ -21,7 +21,7 @@ You would have something like that in your root deps.edn file
 
 Then you should be able to run it from the root of your project via
 
-``` shell
+```shell
 
 ❯ tree  -a
 .
@@ -29,16 +29,49 @@ Then you should be able to run it from the root of your project via
 ├── .deps-versions.edn
 └── modules
     ├── foo1
-    │   └── .deps.edn
+    │   └── deps.edn
     └── foo2
-        └── .deps.edn
+        └── deps.edn
+
+```
+
+Your modules deps.edn file would only have a single additional key in
+dep coordinate to indicate it should be inherited, `:exo.deps/inherit :all`:
+
+```clj
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:exo.deps/inherit :all}}
+
+ :aliases
+ {:dev {:extra-deps {exoscale/blueprint-core {:exo.deps/inherit :all}
+                     exoscale/blueprint-openapi {:exo.deps/inherit :all}}}}}
+```
+
+```shell
 
 ❯ clj -T:deps-modules exoscale.deps-modules/merge-deps
 
-Updating versions from modules/foo1/.deps.edn
+Updating versions from modules/foo1/deps.edn
 Writing modules/foo1/deps.edn
-Updating versions from modules/foo2/.deps.edn
+Updating versions from modules/foo2/deps.edn
 Writing modules/foo2/deps.edn
 Done merging files
+```
+
+
+
+And now if you read the contents of the updated file you would notice
+it now contains the additional coords that tools.deps will be able to
+resolve
+
+``` clj
+{:paths ["src"]
+
+ :deps {org.clojure/clojure {:exo.deps/inherit :all}}
+
+ :aliases
+ {:dev {:extra-deps {exoscale/blueprint-core {:exo.deps/inherit :all :mvn/version "1.0.0"}
+                     exoscale/blueprint-openapi {:exo.deps/inherit :all :mvn/version "1.0.0" :exlusions [...])}}}}}
 
 ```
