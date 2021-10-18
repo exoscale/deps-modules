@@ -36,7 +36,7 @@ coordinate attributes it found for the dependencies that have a
 `:exo.deps/inherit` key in their coordinate map in the modules'
 deps.edn files.
 
-You would have something like that in your root deps.edn file
+You would setup the "tool" in your root `deps.edn` by adding it to your aliases:
 
 ```clj
 {:deps {org.clojure/clojure {:mvn/version "1.10.2"}}
@@ -47,7 +47,12 @@ You would have something like that in your root deps.edn file
                  :ns-default exoscale.deps-modules}}}
 ```
 
-Then you should be able to run it from the root of your project:
+Then add a `.deps-versions.edn` file with your coordinate attributes for your deps:
+
+```clj
+{exoscale/thing-core {:mvn/version "1.0.0"}
+ exoscale/thing-not-core {:mvn/version "2.0.0" :exclusions [something/else]}}
+```
 
 ```shell
 
@@ -85,6 +90,9 @@ inheriting others.
                      exoscale/thing-not-core {:exo.deps/inherit :all}}}}}
 ```
 
+Then you should be able to run it from the root of your project
+
+
 ```shell
 
 ❯ clj -T:deps-modules exoscale.deps-modules/merge-deps
@@ -104,7 +112,7 @@ resolve
 
  :aliases
  {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version] :mvn/version "1.0.0"}
-                     exoscale/thing-not-core {:exo.deps/inherit :all :mvn/version "1.0.0" :exlusions [...])}}}}}
+                     exoscale/thing-not-core {:exo.deps/inherit :all :mvn/version "2.0.0" :exlusions [...])}}}}}
 ```
 
 
