@@ -1,6 +1,6 @@
 # deps-modules
 
-This is a clojure tools that attempts to solve the "multi module"
+This is a clojure "tool" that attempts to solve the "multi module"
 project problem with tools.deps in a minimalistic way.
 
 A multi module repository would be typically a repository that
@@ -18,7 +18,9 @@ We want only a few things:
 * we want all this to require no juggling with aliases, injecting
   files in the tools.deps loading chain, no use of a new binary. A
   developer should be able to just look briefly at one of the deps.edn
-  file in a module and get going.
+  file in a module and get going. Having to run a command when
+  dependencies are modified is, in our opinion, less intrusive than
+  the alternative solutions we found that do this at "runtime".
 
 In order to do this we decided to created a simple clj tool that reads
 a `.deps-versions.edn` file from the project root, containing map of
