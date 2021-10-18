@@ -13,30 +13,31 @@ We want only a few things:
   versions of all/some of our dependencies in our modules
 
 * we would like to have the ability to select all/some attributes from
-  the coordinates form this file when we merge them.
+  the coordinates from this file when we merge them.
 
 * we want all this to require no juggling with aliases, no injecting
-  files in the tools.deps loading chain, no use of a new binary. A
+  of files in the tools.deps loading chain, no use of a new binary. A
   developer should be able to just look briefly at one of the deps.edn
   file in a module and get going. Having to run a command when
-  dependencies are modified is, in our opinion, less intrusive than
+  dependencies are modified, is, in our opinion, less intrusive than
   the alternative solutions we found that do this at "runtime".
 
 * it has to be **very** simple, we don't want to have to spend too
-  much time maintaining a solutions for this (the current solution is
+  much time maintaining a solution for this (the current solution is
   ~100 lines of code).
 
 * it should preseve the comments/formating of the deps.edn files it
-  modifies
+  modifies.
 
-In order to do this we decided to created a simple clj tool that reads
-a `.deps-versions.edn` file from the project root, containing map of
+In order to do this we decided to create a simple tool that reads a
+`.deps-versions.edn` file from the project root, containing map of
 dependencies in the tools.deps format then attempts to merge the
 coordinate attributes it found for the dependencies that have a
 `:exo.deps/inherit` key in their coordinate map in the modules'
 deps.edn files.
 
-You would setup the "tool" in your root `deps.edn` by adding it to your aliases:
+You would setup the "tool" in your root `deps.edn` by adding it to
+your aliases:
 
 ```clj
 {:deps {org.clojure/clojure {:mvn/version "1.10.2"}}
