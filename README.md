@@ -42,7 +42,7 @@ dep coordinate to indicate it should be inherited, `:exo.deps/inherit`.
 
 That key could be `all` or a collection of keys you want to inherit from the version file:
 
-`{:exo.deps/inherit :all}` `{exo.deps/inherit [:mvn/version]` etc
+`{:exo.deps/inherit :all}`, `{exo.deps/inherit [:mvn/version]}`, ...
 
 This allows for instance to select everything but exclusions from the
 versions file or point to specific values at the modules level while
