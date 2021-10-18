@@ -91,7 +91,8 @@ Currently it supports the following options :
 {:output-deps-edn-file "deps.edn"
  :input-deps-edn-file "deps.edn"
  :versions-edn-file ".deps-versions.edn"
- :modules-dir "modules" }
+ :modules-dir "modules"
+ :dry-run? false}
 ```
 
 You can overwrite these values via the cli for instance:
