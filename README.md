@@ -15,7 +15,7 @@ We want only a few things:
 * we would like to have the ability to select all/some attributes from
   the coordinates form this file when we merge them.
 
-* we want all this to require no juggling with aliases, injecting
+* we want all this to require no juggling with aliases, no injecting
   files in the tools.deps loading chain, no use of a new binary. A
   developer should be able to just look briefly at one of the deps.edn
   file in a module and get going. Having to run a command when
