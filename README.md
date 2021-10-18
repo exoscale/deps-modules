@@ -22,12 +22,19 @@ We want only a few things:
   dependencies are modified is, in our opinion, less intrusive than
   the alternative solutions we found that do this at "runtime".
 
+* it has to be **very** simple, we don't want to have to spend too
+  much time maintaining a solutions for this (the current solution is
+  ~100 lines of code).
+
+* it should preseve the comments/formating of the deps.edn files it
+  modifies
+
 In order to do this we decided to created a simple clj tool that reads
 a `.deps-versions.edn` file from the project root, containing map of
 dependencies in the tools.deps format then attempts to merge the
 coordinate attributes it found for the dependencies that have a
 `:exo.deps/inherit` key in their coordinate map in the modules'
-deps.edn files. It does this preserving the format of the files.
+deps.edn files.
 
 You would have something like that in your root deps.edn file
 
