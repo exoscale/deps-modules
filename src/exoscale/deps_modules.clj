@@ -1,10 +1,15 @@
 (ns exoscale.deps-modules
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [rewrite-clj.zip :as z])
+            [rewrite-clj.zip :as z]
+            [clojure.spec.alpha :as s])
   (:import
    (java.io File)
    (java.nio.file Paths)))
+
+(s/def :exo.deps/inherit
+  (s/or :exo.deps.inherit/all #{:all}
+        :exo.deps.inherit/keys (s/coll-of keyword? :min-length 1)))
 
 (set! *warn-on-reflection* true)
 
@@ -42,15 +47,27 @@
               ;; iterate over the keys of that dep version to
               ;; merge contents, if key is new, add it,
               ;; otherwise leave old one
-              (if (and zdep (z/get zdep :exo.deps/inherit))
-                (-> (reduce (fn [zdep [k v]]
-                              (z/assoc zdep k v))
-                            zdep
-                            version)
-                    z/up)
+              (if-let [inherit (and zdep
+                                    (some-> (z/get zdep :exo.deps/inherit)
+                                            z/sexpr))]
+                (do
+                  (s/assert :exo.deps/inherit inherit)
+                  (-> (reduce (fn [zdep [k v]]
+                                (cond-> zdep
+                                  ;; either we inherit all values from the
+                                  ;; versions file, or a selection of vals
+                                  (or (= :all inherit)
+                                      (contains? (set inherit)
+                                                 k))
+                                  (z/assoc k v)))
+                              zdep
+                              version)
+                      z/up))
                 zdeps)))
           zloc
           versions))
+
+;; (merge-deps {})
 
 (defn update-deps-versions
   [versions deps-file]

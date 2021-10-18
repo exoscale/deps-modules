@@ -36,7 +36,15 @@ Then you should be able to run it from the root of your project via
 ```
 
 Your modules deps.edn file would only have a single additional key in
-dep coordinate to indicate it should be inherited, `:exo.deps/inherit :all`:
+dep coordinate to indicate it should be inherited, `:exo.deps/inherit`.
+
+That key could be `all` or a collection of keys you want to inherit from the version file:
+
+`{:exo.deps/inherit :all}` `{exo.deps/inherit [:mvn/version]` etc
+
+This allows for instance to select everything but exclusions from the
+versions file or point to specific values at the modules level while
+inheriting others.
 
 ```clj
 {:paths ["src"]
@@ -44,17 +52,14 @@ dep coordinate to indicate it should be inherited, `:exo.deps/inherit :all`:
  :deps {org.clojure/clojure {:exo.deps/inherit :all}}
 
  :aliases
- {:dev {:extra-deps {exoscale/blueprint-core {:exo.deps/inherit :all}
-                     exoscale/blueprint-openapi {:exo.deps/inherit :all}}}}}
+ {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version]}
+                     exoscale/thing-not-core {:exo.deps/inherit :all}}}}}
 ```
 
 ```shell
 
 ❯ clj -T:deps-modules exoscale.deps-modules/merge-deps
-
-Updating versions from modules/foo1/deps.edn
 Writing modules/foo1/deps.edn
-Updating versions from modules/foo2/deps.edn
 Writing modules/foo2/deps.edn
 Done merging files
 ```
@@ -71,7 +76,6 @@ resolve
  :deps {org.clojure/clojure {:exo.deps/inherit :all}}
 
  :aliases
- {:dev {:extra-deps {exoscale/blueprint-core {:exo.deps/inherit :all :mvn/version "1.0.0"}
-                     exoscale/blueprint-openapi {:exo.deps/inherit :all :mvn/version "1.0.0" :exlusions [...])}}}}}
-
+ {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version] :mvn/version "1.0.0"}
+                     exoscale/thing-not-core {:exo.deps/inherit :all :mvn/version "1.0.0" :exlusions [...])}}}}}
 ```
