@@ -93,7 +93,7 @@
 
 (defn merge-deps
   "Entry point via tools.build \"tool\""
-  [& [opts]]
+  [opts]
   (let [{:as opts :keys [versions-edn-file]} (merge defaults opts)
         ;; load .deps-versions.edn
         versions (load-versions versions-edn-file)
