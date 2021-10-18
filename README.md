@@ -1,14 +1,31 @@
 # deps-modules
 
-Reads `.deps-versions.edn` from project root, which should contain a
-map of dependencies in the tools.deps format then look for all the
-`modules/*/.deps.edn` files and merges coordinate attributes of
-dependencies when it finds a `:exo.deps/inherit` key as in the version
-file in the `.deps-versions.edn` file, then writes out the
-corresponding `modules/*/deps.edn` file, preserving
-comments/indentation/formatting.
+This is a clojure tools that attempts to solve the "multi module"
+project problem with tools.deps in a minimalistic way.
 
-This is meant to be used via tools.deps as a "tool"
+A multi module repository would be typically a repository that
+contains multiple libraries/services in some directory, each with
+their own deps.edn file.
+
+We want only a few things:
+
+* we would like to have a single edn file that describe/pins of the
+  versions of all/some of our dependencies in our modules
+
+* we would like to have the ability to select all/some attributes from
+  the coordinates form this file when we merge them.
+
+* we want all this to require no juggling with aliases, injecting
+  files in the tools.deps loading chain, no use of a new binary. A
+  developer should be able to just look briefly at one of the deps.edn
+  file in a module and get going.
+
+In order to do this we decided to created a simple clj tool that reads
+a `.deps-versions.edn` file from the project root, containing map of
+dependencies in the tools.deps format then attempts to merge the
+coordinate attributes it found for the dependencies that have a
+`:exo.deps/inherit` key in their coordinate map in the modules'
+deps.edn files. It does this preserving the format of the files.
 
 You would have something like that in your root deps.edn file
 
@@ -21,7 +38,7 @@ You would have something like that in your root deps.edn file
                  :ns-default exoscale.deps-modules}}}
 ```
 
-Then you should be able to run it from the root of your project via
+Then you should be able to run it from the root of your project:
 
 ```shell
 
@@ -40,7 +57,8 @@ Then you should be able to run it from the root of your project via
 Your modules deps.edn file would only have a single additional key in
 dep coordinate to indicate it should be inherited, `:exo.deps/inherit`.
 
-That key could be `all` or a collection of keys you want to inherit from the version file:
+That key could be `:all` or a collection of keys you want to inherit
+from the version file:
 
 `{:exo.deps/inherit :all}`, `{exo.deps/inherit [:mvn/version]}`, ...
 
@@ -65,8 +83,6 @@ Writing modules/foo1/deps.edn
 Writing modules/foo2/deps.edn
 Done merging files
 ```
-
-
 
 And now if you read the contents of the updated file you would notice
 it now contains the additional coords that tools.deps will be able to
@@ -97,3 +113,8 @@ Currently it supports the following options :
 
 You can overwrite these values via the cli for instance:
 `clj -T:deps-modules exoscale.deps-modules/merge-deps '{:output-deps-edn-file "deps.edn.new"}'`
+
+
+## License
+
+MIT/ISC - Copyright © 2021 [Exoscale](https://exoscale.com)
