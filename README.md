@@ -2,9 +2,11 @@
 
 Reads `.deps-versions.edn` from project root, which should contain a
 map of dependencies in the tools.deps format then look for all the
-`modules/*/.deps.edn` and substitutes the version when it finds a `_`
-as version in the dependency, then writes out the corresponding
-`modules/*/deps.edn` file, preserving comments/indentation/formatting.
+`modules/*/.deps.edn` files and merges coordinate attributes of
+dependencies when it finds a `:exo.deps/inherit` key as in the version
+file in the `.deps-versions.edn` file, then writes out the
+corresponding `modules/*/deps.edn` file, preserving
+comments/indentation/formatting.
 
 This is meant to be used via tools.deps as a "tool"
 
@@ -14,7 +16,7 @@ You would have something like that in your root deps.edn file
 {:deps {org.clojure/clojure {:mvn/version "1.10.2"}}
  :paths ["src"]
  :aliases
- {:deps-modules {:deps {exoscale/deps-modules {:git/sha "2b2b47554168062b026d5a9952510acdf95e02b5"
+ {:deps-modules {:deps {exoscale/deps-modules {:git/sha "..."
                                                :git/url "git@github.com:exoscale/deps-modules.git"}}
                  :ns-default exoscale.deps-modules}}}
 ```
@@ -79,3 +81,18 @@ resolve
  {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version] :mvn/version "1.0.0"}
                      exoscale/thing-not-core {:exo.deps/inherit :all :mvn/version "1.0.0" :exlusions [...])}}}}}
 ```
+
+
+## Options
+
+Currently it supports the following options :
+
+``` clj
+{:output-deps-edn-file "deps.edn"
+ :input-deps-edn-file "deps.edn"
+ :versions-edn-file ".deps-versions.edn"
+ :modules-dir "modules" }
+```
+
+You can overwrite these values via the cli for instance:
+`clj -T:deps-modules exoscale.deps-modules/merge-deps '{:output-deps-edn-file "deps.edn.new"}'`

@@ -14,7 +14,8 @@
 (set! *warn-on-reflection* true)
 
 (def defaults
-  {:output-deps-edn-file "deps.edn"
+  {:dry-run? false
+   :output-deps-edn-file "deps.edn"
    :input-deps-edn-file "deps.edn"
    :versions-edn-file ".deps-versions.edn"
    :modules-dir "modules"})
@@ -94,7 +95,7 @@
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [opts]
-  (let [{:as opts :keys [versions-edn-file]} (merge defaults opts)
+  (let [{:as opts :keys [versions-edn-file dry-run?]} (merge defaults opts)
         ;; load .deps-versions.edn
         versions (load-versions versions-edn-file)
         ;; find all deps.edn files in modules
@@ -105,7 +106,16 @@
                                                  deps-edn-in-file)
                   out-file (deps-edn-out-file deps-edn-in-file
                                               opts)]
-              (println (format "Writing %s" out-file))
-              (spit out-file deps-out)))
+
+              (if dry-run?
+                (do
+                  (println (apply str (repeat 80 "-")))
+                  (println out-file)
+                  (println (apply str (repeat 80 "-")))
+                  (println deps-out)
+                  (println))
+                (do
+                  (println (format "Writing %s" out-file))
+                  (spit out-file deps-out)))))
           deps-edn-in-files)
     (println "Done merging files")))
