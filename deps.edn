@@ -1,3 +1,6 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.2"}
-        rewrite-clj/rewrite-clj {:mvn/version "1.0.699-alpha"}}}
+        rewrite-clj/rewrite-clj {:mvn/version "1.0.699-alpha"}}
+
+ :tools/usage
+ {:ns-default exoscale.deps-modules}}
