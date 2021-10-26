@@ -48,6 +48,16 @@ your aliases:
                  :ns-default exoscale.deps-modules}}}
 ```
 
+You can also install it globally:
+
+```terminal
+clj -Ttools install exoscale/deps-modules '{:git/sha "04be10d55d54a76c32f5edfba2bed5c24488873b" :git/url "git@github.com:exoscale/deps-modules.git"}' :as mdeps
+
+;; then you can just use it by running:
+
+clj -Tmdeps merge-deps
+```
+
 Then add a `.deps-versions.edn` file with your coordinate attributes for your deps:
 
 ```clj
