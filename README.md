@@ -145,6 +145,24 @@ Currently it supports the following options :
 You can overwrite these values via the cli for instance:
 `clj -T:deps-modules exoscale.deps-modules/merge-deps '{:output-deps-edn-file "deps.edn.new"}'`
 
+## babashka
+
+You can run this via a bb script that way:
+
+``` clj
+(require '[babashka.deps :as deps])
+
+(deps/add-deps
+ '{:deps {exoscale/deps-modules {:git/sha "6843704f9ad63f52ec9332c46a657da8bf585a07"
+                                 :git/url "git@github.com:exoscale/deps-modules.git"}
+          borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
+                                 :sha "12947185b4f8b8ff8ee3bc0f19c98dbde54d4c90"}}})
+
+(require 'spartan.spec)
+(require '[exoscale.deps-modules :as modules])
+
+(modules/merge-deps {})
+```
 
 ## License
 
