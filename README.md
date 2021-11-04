@@ -1,11 +1,14 @@
 # deps-modules
 
-This is a clojure "tool" that attempts to solve the "multi module"
-project problem with tools.deps in a minimalistic way.
+This is a clojure "tool" that attempts to solve one of the "multi
+module" project problems with tools.deps in a minimalistic way.
 
 A multi module repository would be typically a repository that
 contains multiple libraries/services in some directory, each with
 their own deps.edn file.
+
+Out of the box tools.deps does already a lot of what we need, there
+are however a few missing bits.
 
 We want only a few things:
 
