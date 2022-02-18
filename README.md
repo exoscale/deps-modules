@@ -152,13 +152,12 @@ You can run this via a bb script that way:
 ``` clj
 (require '[babashka.deps :as deps])
 
-(deps/add-deps
+(deps/add-deps ;; or add deps in bb.edn
  '{:deps {exoscale/deps-modules {:git/sha "6843704f9ad63f52ec9332c46a657da8bf585a07"
                                  :git/url "git@github.com:exoscale/deps-modules.git"}
-          borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
-                                 :sha "12947185b4f8b8ff8ee3bc0f19c98dbde54d4c90"}}})
+          org.babashka/spec.alpha {:git/url "https://github.com/babashka/spec.alpha"
+                                   :sha "1a841c4cc1d4f6dab7505a98ed2d532dd9d56b78"}}})
 
-(require 'spartan.spec)
 (require '[exoscale.deps-modules :as modules])
 
 (modules/merge-deps {})
