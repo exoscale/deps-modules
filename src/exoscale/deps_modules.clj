@@ -87,7 +87,7 @@
                                     (z/up (update-deps-versions* deps versions))
                                     zalias))
                                 zalias
-                                [:extra-deps :override-deps]))
+                                [:extra-deps :override-deps :deps]))
                       zaliases)
           zloc)
         z/root-string)))
