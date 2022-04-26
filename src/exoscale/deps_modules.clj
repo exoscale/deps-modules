@@ -18,6 +18,7 @@
    :output-deps-edn-file "deps.edn"
    :input-deps-edn-file "deps.edn"
    :versions-edn-file ".deps-versions.edn"
+   :versions-edn-keypath []
    :modules-dir "modules"})
 
 (defn find-modules-deps
@@ -37,8 +38,9 @@
       str))
 
 (defn load-versions
-  [versions-file]
-  (edn/read-string (slurp versions-file)))
+  [{:keys [versions-edn-file versions-edn-keypath]}]
+  (get-in (edn/read-string (slurp versions-edn-file))
+          versions-edn-keypath))
 
 (defn- update-deps-versions*
   [zloc versions]
@@ -95,9 +97,9 @@
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [opts]
-  (let [{:as opts :keys [versions-edn-file dry-run?]} (merge defaults opts)
+  (let [{:as opts :keys [dry-run?]} (merge defaults opts)
         ;; load .deps-versions.edn
-        versions (load-versions versions-edn-file)
+        versions (load-versions opts)
         ;; find all deps.edn files in modules
         deps-edn-in-files (find-modules-deps opts)]
     ;; for all .deps.edn run update-deps-versions
