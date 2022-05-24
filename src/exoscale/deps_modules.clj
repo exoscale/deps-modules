@@ -5,7 +5,12 @@
             [clojure.spec.alpha :as s])
   (:import
    (java.io File)
-   (java.nio.file Paths)))
+   (java.nio.file Path Paths Files FileVisitOption)
+   (java.util.stream Collectors)))
+
+(def max-walk-depth
+  "No module hierarchy should be deeper than the provided value"
+  10)
 
 (s/def :exo.deps/inherit
   (s/or :exo.deps.inherit/all #{:all}
@@ -21,14 +26,23 @@
    :versions-edn-keypath []
    :modules-dir "modules"})
 
+(defn is-project-file-fn
+  [project-file-name]
+  (fn [^Path path]
+    (let [^File f (.toFile path)]
+      (and (.isFile f)
+           (= (str (.getName f))
+              (str project-file-name))))))
+
 (defn find-modules-deps
   [{:keys [modules-dir input-deps-edn-file]}]
-  (for [^File project (.listFiles (io/file modules-dir))
-        ^File project-file (.listFiles project)
-        :when (and (.isFile ^File project-file)
-                   (= (.getName project-file)
-                      input-deps-edn-file))]
-    project-file))
+  (let [path   (Paths/get modules-dir (into-array String []))]
+    (->> (Files/walk path (int max-walk-depth) (into-array FileVisitOption []))
+         (.iterator)
+         (iterator-seq)
+         (filter (is-project-file-fn input-deps-edn-file))
+         (map #(.toFile ^Path %))
+         (vec))))
 
 (defn deps-edn-out-file
   [^File dot-deps-edn-file {:keys [output-deps-edn-file]}]
