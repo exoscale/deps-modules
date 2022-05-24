@@ -2,18 +2,15 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [rewrite-clj.zip :as z]
-            [clojure.spec.alpha :as s])
-  (:import
-   (java.io File)
-   (java.nio.file Path Paths Files FileVisitOption)
-   (java.util.stream Collectors)))
+            [exoscale.deps-modules.path :as p]
+            [clojure.spec.alpha :as s]))
 
 (def max-walk-depth
   "No module hierarchy should be deeper than the provided value"
   10)
 
 (s/def :exo.deps/inherit
-  (s/or :exo.deps.inherit/all #{:all}
+  (s/or :exo.deps.inherit/all #{:all :relative-root}
         :exo.deps.inherit/keys (s/coll-of keyword? :min-length 1)))
 
 (set! *warn-on-reflection* true)
@@ -26,65 +23,66 @@
    :versions-edn-keypath []
    :modules-dir "modules"})
 
-(defn is-project-file-fn
+(defn- is-project-file-fn
   [project-file-name]
-  (fn [^Path path]
-    (let [^File f (.toFile path)]
-      (and (.isFile f)
-           (= (str (.getName f))
-              (str project-file-name))))))
+  (fn [path]
+    (and (p/file? path) (= (p/filename path) (str project-file-name)))))
 
-(defn find-modules-deps
+(defn- find-modules-deps
   [{:keys [modules-dir input-deps-edn-file]}]
-  (let [path   (Paths/get modules-dir (into-array String []))]
-    (->> (Files/walk path (int max-walk-depth) (into-array FileVisitOption []))
-         (.iterator)
-         (iterator-seq)
-         (filter (is-project-file-fn input-deps-edn-file))
-         (map #(.toFile ^Path %))
-         (vec))))
+  (p/find-files modules-dir max-walk-depth (is-project-file-fn input-deps-edn-file)))
 
-(defn deps-edn-out-file
-  [^File dot-deps-edn-file {:keys [output-deps-edn-file]}]
-  (-> dot-deps-edn-file
-      (.getParent)
-      (Paths/get (into-array String [output-deps-edn-file]))
-      str))
+(defn- deps-edn-out-file
+  [dot-deps-edn-file {:keys [output-deps-edn-file]}]
+  (str (p/sibling dot-deps-edn-file output-deps-edn-file)))
 
-(defn load-versions
+(defn- load-versions
   [{:keys [versions-edn-file versions-edn-keypath]}]
   (get-in (edn/read-string (slurp versions-edn-file))
           versions-edn-keypath))
 
-(defn- update-deps-versions*
-  [zloc versions]
-  (reduce (fn [zdeps [dep version]]
-            ;; check if we can get to a node for that dep
-            (let [zdep (z/get zdeps dep)]
-              ;; iterate over the keys of that dep version to
-              ;; merge contents, if key is new, add it,
-              ;; otherwise leave old one
-              (if-let [inherit (and zdep
-                                    (some-> (z/get zdep :exo.deps/inherit)
-                                            z/sexpr))]
-                (do
-                  (s/assert :exo.deps/inherit inherit)
-                  (-> (reduce (fn [zdep [k v]]
-                                (cond-> zdep
-                                  ;; either we inherit all values from the
-                                  ;; versions file, or a selection of vals
-                                  (or (= :all inherit)
-                                      (contains? (set inherit)
-                                                 k))
-                                  (z/assoc k v)))
-                              zdep
-                              version)
-                      z/up))
-                zdeps)))
-          zloc
-          versions))
+(defn- zloc-keys
+  [zloc]
+  (loop [loc (z/down zloc)
+         res []]
+    (if (z/end? loc)
+      res
+      (recur (-> loc z/right z/right)
+             (let [sx (z/sexpr loc)]
+               (cond-> res
+                 (contains? (-> loc z/right z/sexpr) :exo.deps/inherit)
+                 (conj sx)))))))
 
-;; (merge-deps {})
+(defn- inherit-deps*
+  "Apply inheritance rules declared in dependent modules.
+  Expects a correctly formed inheritance declaration and presence of the
+  managed dependency."
+  [deps-path k {:exo.deps/keys [inherit] :as v1} v2]
+  (s/assert :exo.deps/inherit inherit)
+  (when (nil? v2)
+    (throw (ex-info
+            (format "dependencies in '%s' reference undeclared managed dependency '%s'"
+                    deps-path k)
+            {})))
+  (cond
+    (= :all inherit)
+    (merge v1 v2)
+
+    (= :canonicalize-local-root inherit)
+    (merge v1 (update v2 :local/root (partial p/canonicalize deps-path)))
+
+    :else
+    (merge v1 (select-keys v2 inherit))))
+
+(defn- update-deps-versions*
+  [zloc versions deps-path]
+  (let [ks (zloc-keys zloc)]
+    (reduce #(z/assoc %1 %2 (inherit-deps* deps-path
+                                           %2
+                                           (z/sexpr (z/get %1 %2))
+                                           (get versions %2)))
+            zloc
+            ks)))
 
 (defn update-deps-versions
   [versions deps-file]
@@ -92,7 +90,7 @@
         ;; first merge version on :deps key and then back to root
         zloc (-> zloc
                  (z/get :deps)
-                 (update-deps-versions* versions)
+                 (update-deps-versions* versions deps-file)
                  z/up)]
     ;; try merging aliases if found
     (-> (if-let [zaliases (z/get zloc :aliases)]
@@ -100,7 +98,7 @@
                         (reduce (fn [zalias k]
                                   (if-let [deps (z/get zalias k)]
                                     ;; merge and back to zalias
-                                    (z/up (update-deps-versions* deps versions))
+                                    (z/up (update-deps-versions* deps versions deps-file))
                                     zalias))
                                 zalias
                                 [:extra-deps :override-deps :deps]))
@@ -111,7 +109,7 @@
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [opts]
-  (let [{:as opts :keys [dry-run?]} (merge defaults opts)
+  (let [{:as opts :keys [dry-run? versions-edn-file]} (merge defaults opts)
         ;; load .deps-versions.edn
         versions (load-versions opts)
         ;; find all deps.edn files in modules
