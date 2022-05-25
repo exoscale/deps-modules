@@ -17,17 +17,13 @@
    :input-deps-edn-file "deps.edn"
    :versions-edn-file ".deps-versions.edn"
    :versions-edn-keypath []
-   :modules-patterns ["modules/*/deps.edn"]})
-
-(defn- is-project-file?
-  [project-file-name path]
-  (= (p/filename path) (str project-file-name)))
+   :modules-deps-edn-patterns ["modules/*/deps.edn"]})
 
 (defn- find-modules-deps
-  [{:keys [modules-dir modules-patterns input-deps-edn-file]}]
+  [{:keys [modules-dir modules-deps-edn-patterns input-deps-edn-file]}]
   (->> (if (some? modules-dir)
          (p/list-modules-files modules-dir input-deps-edn-file)
-         (p/glob-modules-files "." modules-patterns))))
+         (p/glob-modules-files "." modules-deps-edn-patterns))))
 
 (defn- deps-edn-out-file
   [dot-deps-edn-file {:keys [output-deps-edn-file]}]
