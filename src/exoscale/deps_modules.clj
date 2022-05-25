@@ -5,34 +5,45 @@
             [exoscale.deps-modules.path :as p]
             [clojure.spec.alpha :as s]))
 
-(s/def :exo.deps/inherit
-  (s/or :exo.deps.inherit/all #{:all}
-        :exo.deps.inherit/keys (s/coll-of keyword? :min-length 1)))
+(s/def :exoscale.deps/inherit
+  (s/or :exoscale.deps.inherit/all #{:all}
+        :exoscale.deps.inherit/keys (s/coll-of keyword? :min-length 1)))
 
 (set! *warn-on-reflection* true)
 
 (def defaults
   {:dry-run? false
-   :output-deps-edn-file "deps.edn"
-   :input-deps-edn-file "deps.edn"
-   :versions-edn-file ".deps-versions.edn"
-   :versions-edn-keypath []
-   :modules-deps-edn-patterns ["modules/*/deps.edn"]})
+   :versions-file "deps.edn"
+   :versions-keypath [:exoscale.deps/managed-dependencies]
+   :deps-files-keypath [:exoscale.deps/deps-files]})
 
-(defn- find-modules-deps
-  [{:keys [modules-dir modules-deps-edn-patterns input-deps-edn-file]}]
-  (->> (if (some? modules-dir)
-         (p/list-modules-files modules-dir input-deps-edn-file)
-         (p/glob-modules-files "." modules-deps-edn-patterns))))
+(def default-deps-files
+  ["modules/*/deps.edn"])
 
-(defn- deps-edn-out-file
-  [dot-deps-edn-file {:keys [output-deps-edn-file]}]
-  (str (p/sibling dot-deps-edn-file output-deps-edn-file)))
+(defn- find-deps-files
+  [{:keys [versions-file deps-files-keypath deps-files]}]
+  (let [file-config (some-> versions-file
+                            slurp
+                            edn/read-string
+                            (get-in deps-files-keypath))]
+    (cond
+      ;; If a `:deps-files` config option was given
+      ;; on the command line, let it take precedence
+      (some? deps-files)
+      (p/glob-modules-files "." deps-files)
+
+      ;; If patterns were found in the versions file, let them take
+      ;; precedence
+      (some? file-config)
+      (p/glob-modules-files "." file-config)
+
+      ;; Otherwise, no configuration was given, use a default value
+      :else
+      (p/glob-modules-files "." default-deps-files))))
 
 (defn- load-versions
-  [{:keys [versions-edn-file versions-edn-keypath]}]
-  (get-in (edn/read-string (slurp versions-edn-file))
-          versions-edn-keypath))
+  [{:keys [versions-file versions-keypath]}]
+  (get-in (edn/read-string (slurp versions-file)) versions-keypath))
 
 (defn- zloc-keys
   [zloc]
@@ -43,15 +54,15 @@
       (recur (-> loc z/right z/right)
              (let [sx (z/sexpr loc)]
                (cond-> res
-                 (contains? (-> loc z/right z/sexpr) :exo.deps/inherit)
+                 (contains? (-> loc z/right z/sexpr) :exoscale.deps/inherit)
                  (conj sx)))))))
 
 (defn- inherit-deps*
   "Apply inheritance rules declared in dependent modules.
   Expects a correctly formed inheritance declaration and presence of the
   managed dependency."
-  [deps-path k {:exo.deps/keys [inherit] :as declared} managed]
-  (s/assert :exo.deps/inherit inherit)
+  [deps-path k {:exoscale.deps/keys [inherit] :as declared} managed]
+  (s/assert :exoscale.deps/inherit inherit)
   (when (nil? managed)
     (binding [*out* *err*]
       (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
@@ -101,23 +112,19 @@
         ;; load .deps-versions.edn
         versions (load-versions opts)
         ;; find all deps.edn files in modules
-        deps-edn-in-files (find-modules-deps opts)]
+        deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
-    (run! (fn [deps-edn-in-file]
-            (let [deps-out (update-deps-versions versions
-                                                 deps-edn-in-file)
-                  out-file (deps-edn-out-file deps-edn-in-file
-                                              opts)]
-
+    (run! (fn [file]
+            (let [deps-out (update-deps-versions versions file)]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
-                  (println out-file)
+                  (println (str file))
                   (println (apply str (repeat 80 "-")))
                   (println deps-out)
                   (println))
                 (do
-                  (println (format "Writing %s" out-file))
-                  (spit out-file deps-out)))))
-          deps-edn-in-files)
+                  (println (format "Writing %s" file))
+                  (spit file deps-out)))))
+          deps-files)
     (println "Done merging files")))
