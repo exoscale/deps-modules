@@ -5,12 +5,8 @@
             [exoscale.deps-modules.path :as p]
             [clojure.spec.alpha :as s]))
 
-(def max-walk-depth
-  "No module hierarchy should be deeper than the provided value"
-  10)
-
 (s/def :exo.deps/inherit
-  (s/or :exo.deps.inherit/all #{:all :relative-root}
+  (s/or :exo.deps.inherit/all #{:all}
         :exo.deps.inherit/keys (s/coll-of keyword? :min-length 1)))
 
 (set! *warn-on-reflection* true)
@@ -21,16 +17,17 @@
    :input-deps-edn-file "deps.edn"
    :versions-edn-file ".deps-versions.edn"
    :versions-edn-keypath []
-   :modules-dir "modules"})
+   :modules-patterns ["modules/*/deps.edn"]})
 
-(defn- is-project-file-fn
-  [project-file-name]
-  (fn [path]
-    (and (p/file? path) (= (p/filename path) (str project-file-name)))))
+(defn- is-project-file?
+  [project-file-name path]
+  (= (p/filename path) (str project-file-name)))
 
 (defn- find-modules-deps
-  [{:keys [modules-dir input-deps-edn-file]}]
-  (p/find-files modules-dir max-walk-depth (is-project-file-fn input-deps-edn-file)))
+  [{:keys [modules-dir modules-patterns input-deps-edn-file]}]
+  (->> (if (some? modules-dir)
+         (p/list-modules-files modules-dir input-deps-edn-file)
+         (p/glob-modules-files "." modules-patterns))))
 
 (defn- deps-edn-out-file
   [dot-deps-edn-file {:keys [output-deps-edn-file]}]
@@ -57,22 +54,17 @@
   "Apply inheritance rules declared in dependent modules.
   Expects a correctly formed inheritance declaration and presence of the
   managed dependency."
-  [deps-path k {:exo.deps/keys [inherit] :as v1} v2]
+  [deps-path k {:exo.deps/keys [inherit] :as declared} managed]
   (s/assert :exo.deps/inherit inherit)
-  (when (nil? v2)
-    (throw (ex-info
-            (format "dependencies in '%s' reference undeclared managed dependency '%s'"
-                    deps-path k)
-            {})))
-  (cond
-    (= :all inherit)
-    (merge v1 v2)
-
-    (= :canonicalize-local-root inherit)
-    (merge v1 (update v2 :local/root (partial p/canonicalize deps-path)))
-
-    :else
-    (merge v1 (select-keys v2 inherit))))
+  (when (nil? managed)
+    (binding [*out* *err*]
+      (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
+              deps-path k)))
+  (let [dep (merge declared (cond-> managed (not= :all inherit)
+                                    (select-keys inherit)))]
+    (cond-> dep
+      (contains? dep :local/root)
+      (update :local/root p/canonicalize deps-path))))
 
 (defn- update-deps-versions*
   [zloc versions deps-path]
