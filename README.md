@@ -54,7 +54,7 @@ your aliases:
 You can also install it globally:
 
 ```terminal
-clj -Ttools install exoscale/deps-modules '{:git/sha "04be10d55d54a76c32f5edfba2bed5c24488873b" :git/url "git@github.com:exoscale/deps-modules.git"}' :as mdeps
+clj -Ttools install exoscale/deps-modules '{:git/sha "d9747d20e7f32a163bab00dd5c2da7b3f4837897" :git/url "git@github.com:exoscale/deps-modules.git"}' :as mdeps
 
 ;; then you can just use it by running:
 
@@ -135,15 +135,29 @@ resolve
 Currently it supports the following options :
 
 ``` clj
-{:output-deps-edn-file "deps.edn"
- :input-deps-edn-file "deps.edn"
- :versions-edn-file ".deps-versions.edn"
- :modules-dir "modules"
- :dry-run? false}
+{:versions-file       "deps.edn"
+ :versions-keypath   [:exoscale.deps/managed-dependencies]
+ :deps-files-keypath [:exoscale.deps/deps-files]
+ :dry-run?           false}
 ```
 
+- `dry-run?`: When set to `true`, will only print the intended changes
+- `versions-file`: File containing the managed dependencies configuration
+- `versions-keypath`: Key path at which the managed dependencies configuration is to be found in
+   the configured `versions-file`. Defaults to `[:exoscale.deps/managed-dependencies]`
+- `deps-files-keypath`: Key path at which the globbing pattern for
+   **tools.deps** configuration files is to be found in the configured
+   `versions-file`. Should contain a collection of globbing patterns
+   used to find project files. Defaults to
+   `[:exoscale.deps/deps-files]`
+- `deps-files`: A collection of globbing patterns used to find
+   **tools.deps** configuration files. This is generally expected to
+   be found in configuration files. This option allows overriding on
+   the command line. If no pattern collection is found,
+   `["modules/*/deps.edn"]` will be assumed.
+
 You can overwrite these values via the cli for instance:
-`clj -T:deps-modules exoscale.deps-modules/merge-deps '{:output-deps-edn-file "deps.edn.new"}'`
+`clj -T:deps-modules exoscale.deps-modules/merge-deps '{:dry-run? true}'`
 
 ## babashka
 
