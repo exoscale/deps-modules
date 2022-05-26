@@ -12,9 +12,10 @@
 (set! *warn-on-reflection* true)
 
 (def defaults
-  {:dry-run? false
-   :versions-file "deps.edn"
-   :versions-keypath [:exoscale.deps/managed-dependencies]
+  {:dry-run?           false
+   :versions-file      "deps.edn"
+   :aliases-keypath    [:exoscale.deps/managed-aliases]
+   :versions-keypath   [:exoscale.deps/managed-dependencies]
    :deps-files-keypath [:exoscale.deps/deps-files]})
 
 (def default-deps-files
@@ -108,14 +109,58 @@
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [opts]
-  (let [{:as opts :keys [dry-run? versions-edn-file]} (merge defaults opts)
-        ;; load .deps-versions.edn
+  (let [{:as opts :keys [dry-run?]} (merge defaults opts)
         versions (load-versions opts)
         ;; find all deps.edn files in modules
         deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [file]
             (let [deps-out (update-deps-versions versions file)]
+              (if dry-run?
+                (do
+                  (println (apply str (repeat 80 "-")))
+                  (println (str file))
+                  (println (apply str (repeat 80 "-")))
+                  (println deps-out)
+                  (println))
+                (do
+                  (println (format "Writing %s" file))
+                  (spit file deps-out)))))
+          deps-files)
+    (println "Done merging files")))
+
+(defn- load-aliases
+  [{:keys [versions-file aliases-keypath]}]
+  (get-in (edn/read-string (slurp versions-file)) aliases-keypath))
+
+(defn- update-aliases*
+  [zloc aliases deps-path]
+  (let [ks (zloc-keys zloc)]
+    (reduce #(z/assoc %1 %2 (inherit-deps* deps-path
+                                           %2
+                                           (z/sexpr (z/get %1 %2))
+                                           (get aliases %2)))
+            zloc
+            ks)))
+
+(defn update-aliases
+  [aliases deps-file]
+  (-> (z/of-string (slurp deps-file))
+      (z/get :aliases)
+      (update-aliases* aliases deps-file)
+      z/up
+      z/root-string))
+
+(defn merge-aliases
+  "Entry point via tools.build \"tool\""
+  [opts]
+  (let [{:as opts :keys [dry-run?]} (merge defaults opts)
+        versions (load-aliases opts)
+        ;; find all deps.edn files in modules
+        deps-files (find-deps-files opts)]
+    ;; for all .deps.edn run update-deps-versions
+    (run! (fn [file]
+            (let [deps-out (update-aliases versions file)]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
