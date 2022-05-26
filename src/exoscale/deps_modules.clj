@@ -19,7 +19,7 @@
    :deps-files-keypath [:exoscale.deps/deps-files]})
 
 (def default-deps-files
-  ["modules/*/deps.edn"])
+  ["deps.edn" "modules/*/deps.edn"])
 
 (defn- find-deps-files
   [{:keys [versions-file deps-files-keypath deps-files]}]
