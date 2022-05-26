@@ -68,8 +68,9 @@
     (binding [*out* *err*]
       (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
               deps-path k)))
-  (let [dep (merge declared (cond-> managed (not= :all inherit)
-                                    (select-keys inherit)))]
+  (let [dep (merge (select-keys declared [:exclusions :exoscale.deps/inherit])
+                   (cond-> managed (not= :all inherit)
+                           (select-keys inherit)))]
     (cond-> dep
       (contains? dep :local/root)
       (update :local/root p/canonicalize deps-path))))
