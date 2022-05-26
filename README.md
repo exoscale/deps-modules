@@ -31,7 +31,7 @@ We want only a few things:
 
 * it should preseve the comments/formating of the deps.edn files it
   modifies.
-  
+
 * it should allow for synchronizing other common elements of `deps.edn`
   files, such as aliases.
 
@@ -39,8 +39,8 @@ In order to do this we decided to create a simple tool that reads
 configuration from a top-level `deps.edn` file, containing map of
 dependencies in the tools.deps format then attempts to merge the
 coordinate attributes it found for the dependencies that have a
-`:exo.deps/inherit` key in their coordinate map in the modules'
-deps.edn files.
+`:exoscale.deps/inherit` key in their coordinate map in the modules'
+deps.edn files, as well as into itself.
 
 You would setup the "tool" in your root `deps.edn` by adding it to
 your aliases:
@@ -87,12 +87,12 @@ with the coordinate attributes for your deps:
 ```
 
 Your modules deps.edn file would only have a single additional key in
-dep coordinate to indicate it should be inherited, `:exo.deps/inherit`.
+dep coordinate to indicate it should be inherited, `:exoscale.deps/inherit`.
 
 That key could be `:all` or a collection of keys you want to inherit
 from the version file:
 
-`{:exo.deps/inherit :all}`, `{exo.deps/inherit [:mvn/version]}`, ...
+`{:exoscale.deps/inherit :all}`, `{exocale.deps/inherit [:mvn/version]}`, ...
 
 This allows for instance to select everything but exclusions from the
 versions file or point to specific values at the modules level while
@@ -101,11 +101,11 @@ inheriting others.
 ```clj
 {:paths ["src"]
 
- :deps {org.clojure/clojure {:exo.deps/inherit :all}}
+ :deps {org.clojure/clojure {:exoscale.deps/inherit :all}}
 
  :aliases
- {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version]}
-                     exoscale/thing-not-core {:exo.deps/inherit :all}}}}}
+ {:dev {:extra-deps {exoscale/thing-core {:exoscale.deps/inherit [:mvn/version]}
+                     exoscale/thing-not-core {:exoscale.deps/inherit :all}}}}}
 ```
 
 Then you should be able to run it from the root of your project
@@ -114,6 +114,7 @@ Then you should be able to run it from the root of your project
 ```shell
 
 ❯ clj -T:deps-modules exoscale.deps-modules/merge-deps
+Writing deps.edn
 Writing modules/foo1/deps.edn
 Writing modules/foo2/deps.edn
 Done merging files
@@ -126,11 +127,11 @@ resolve
 ``` clj
 {:paths ["src"]
 
- :deps {org.clojure/clojure {:exo.deps/inherit :all}}
+ :deps {org.clojure/clojure {:exoscale.deps/inherit :all}}
 
  :aliases
- {:dev {:extra-deps {exoscale/thing-core {:exo.deps/inherit [:mvn/version] :mvn/version "1.0.0"}
-                     exoscale/thing-not-core {:exo.deps/inherit :all :mvn/version "2.0.0" :exlusions [...])}}}}}
+ {:dev {:extra-deps {exoscale/thing-core {:exoscale.deps/inherit [:mvn/version] :mvn/version "1.0.0"}
+                     exoscale/thing-not-core {:exoscale.deps/inherit :all :mvn/version "2.0.0" :exlusions [...])}}}}}
 ```
 
 ## Merging aliases
@@ -140,7 +141,7 @@ Merging aliases follows exactly the same approach:
 - `:exoscale.deps/managed-aliases` contains a map of alias name to alias shared configuration.
 - Any downstream project (including the top level `deps.edn` file itself) can request to have an
   alias synchronized using the same `:exoscale.deps/inherit` key.
- 
+
 ## Options
 
 Currently it supports the following options :
@@ -165,7 +166,7 @@ Currently it supports the following options :
    **tools.deps** configuration files. This is generally expected to
    be found in configuration files. This option allows overriding on
    the command line. If no pattern collection is found,
-   `["modules/*/deps.edn"]` will be assumed.
+   `["deps.edn" "modules/*/deps.edn"]` will be assumed.
 - `aliases-keypath`: Key path at which the managed aliases configuration is to be found
    in the configured `versions-file`. Defaults to `[:exoscale.deps/managed-aliases]`
 
