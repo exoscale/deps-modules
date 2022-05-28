@@ -68,7 +68,7 @@
     (binding [*out* *err*]
       (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
               deps-path k)))
-  (let [dep (merge (select-keys declared [:exclusions :exoscale.deps/inherit])
+  (let [dep (merge (dissoc declared :mvn/version :git/url :git/sha :git/tag :local/root)
                    (cond-> managed (not= :all inherit)
                            (select-keys inherit)))]
     (cond-> dep
