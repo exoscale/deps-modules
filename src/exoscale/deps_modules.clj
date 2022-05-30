@@ -58,6 +58,14 @@
                  (contains? (-> loc z/right z/sexpr) :exoscale.deps/inherit)
                  (conj sx)))))))
 
+(defn- canonicalize-dep
+  "When in the presence of a local dependency, adapt root to point to the
+   right place."
+  [dep deps-path]
+  (cond-> dep
+    (contains? dep :local/root)
+    (update :local/root p/canonicalize deps-path)))
+
 (defn- inherit-deps*
   "Apply inheritance rules declared in dependent modules.
   Expects a correctly formed inheritance declaration and presence of the
@@ -68,12 +76,10 @@
     (binding [*out* *err*]
       (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
               deps-path k)))
-  (let [dep (merge (dissoc declared :mvn/version :git/url :git/sha :git/tag :local/root)
-                   (cond-> managed (not= :all inherit)
-                           (select-keys inherit)))]
-    (cond-> dep
-      (contains? dep :local/root)
-      (update :local/root p/canonicalize deps-path))))
+  (canonicalize-dep
+   (merge (dissoc declared :mvn/version :git/url :git/sha :git/tag :local/root)
+          (cond-> managed (not= :all inherit) (select-keys inherit)))
+   deps-path))
 
 (defn- update-deps-versions*
   [zloc versions deps-path]
@@ -134,13 +140,26 @@
   [{:keys [versions-file aliases-keypath]}]
   (get-in (edn/read-string (slurp versions-file)) aliases-keypath))
 
+(defn- inherit-alias*
+  [deps-path k {:exoscale.deps/keys [inherit] :as declared} managed]
+  (s/assert :exoscale.deps/inherit inherit)
+  (when (nil? managed)
+    (binding [*out* *err*]
+      (printf "alias in '%s' reference undeclared managed alias '%s'\n" deps-path k)))
+  (let [dep (merge (dissoc declared :deps :paths :extra-deps :main-opts)
+                   (cond-> managed
+                     (not= :all inherit) (select-keys inherit)))]
+    (-> dep
+        (update :deps update-vals #(canonicalize-dep % deps-path))
+        (update :extra-deps update-vals #(canonicalize-dep % deps-path)))))
+
 (defn- update-aliases*
   [zloc aliases deps-path]
   (let [ks (zloc-keys zloc)]
-    (reduce #(z/assoc %1 %2 (inherit-deps* deps-path
-                                           %2
-                                           (z/sexpr (z/get %1 %2))
-                                           (get aliases %2)))
+    (reduce #(z/assoc %1 %2 (inherit-alias* deps-path
+                                            %2
+                                            (z/sexpr (z/get %1 %2))
+                                            (get aliases %2)))
             zloc
             ks)))
 
