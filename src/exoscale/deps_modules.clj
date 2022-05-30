@@ -149,9 +149,11 @@
   (let [dep (merge (dissoc declared :deps :paths :extra-deps :main-opts)
                    (cond-> managed
                      (not= :all inherit) (select-keys inherit)))]
-    (-> dep
-        (update :deps update-vals #(canonicalize-dep % deps-path))
-        (update :extra-deps update-vals #(canonicalize-dep % deps-path)))))
+    (cond-> dep
+      (contains? dep :deps)
+      (update :deps update-vals #(canonicalize-dep % deps-path))
+      (contains? dep :extra-deps)
+      (update :extra-deps update-vals #(canonicalize-dep % deps-path)))))
 
 (defn- update-aliases*
   [zloc aliases deps-path]
