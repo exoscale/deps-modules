@@ -12,10 +12,10 @@
 (set! *warn-on-reflection* true)
 
 (def defaults
-  {:dry-run?           false
-   :versions-file      "deps.edn"
-   :aliases-keypath    [:exoscale.deps/managed-aliases]
-   :versions-keypath   [:exoscale.deps/managed-dependencies]
+  {:dry-run? false
+   :versions-file "deps.edn"
+   :aliases-keypath [:exoscale.deps/managed-aliases]
+   :versions-keypath [:exoscale.deps/managed-dependencies]
    :deps-files-keypath [:exoscale.deps/deps-files]})
 
 (def default-deps-files
@@ -77,7 +77,7 @@
       (printf "dependencies in '%s' reference undeclared managed dependency '%s'\n"
               deps-path k)))
   (canonicalize-dep
-   (merge (dissoc declared :mvn/version :git/url :git/sha :git/tag :local/root)
+   (merge (dissoc declared :mvn/version :git/url :git/sha :git/tag :local/root :deps/root)
           (cond-> managed (not= :all inherit) (select-keys inherit)))
    deps-path))
 
