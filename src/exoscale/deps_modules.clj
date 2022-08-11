@@ -16,7 +16,9 @@
    :versions-file "deps.edn"
    :aliases-keypath [:exoscale.deps/managed-aliases]
    :versions-keypath [:exoscale.deps/managed-dependencies]
-   :deps-files-keypath [:exoscale.deps/deps-files]})
+   :deps-files-keypath [:exoscale.deps/deps-files]
+   :cljfmt-options (assoc cljfmt/default-options
+                          :split-keypairs-over-multiple-lines? true)})
 
 (def default-deps-files
   ["deps.edn" "modules/*/deps.edn"])
@@ -114,10 +116,9 @@
         z/root-string)))
 
 (defn fmt
-  [s]
+  [s opts]
   (#'cljfmt/reformat-string ; we could vendor that eventually
-   (assoc cljfmt/default-options
-          :split-keypairs-over-multiple-lines? true)
+   opts
    s))
 
 (defn merge-deps
@@ -129,7 +130,8 @@
         deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [file]
-            (let [deps-out (fmt (update-deps-versions versions file))]
+            (let [deps-out (fmt (update-deps-versions versions file)
+                                opts)]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
@@ -189,7 +191,8 @@
         deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [file]
-            (let [deps-out (fmt (update-aliases versions file))]
+            (let [deps-out (fmt (update-aliases versions file)
+                                opts)]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
