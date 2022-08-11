@@ -1,5 +1,6 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        cljfmt/cljfmt {:mvn/version "0.8.2"}
         rewrite-clj/rewrite-clj {:mvn/version "1.0.699-alpha"}}
 
  :tools/usage

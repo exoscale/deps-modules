@@ -1,9 +1,9 @@
 (ns exoscale.deps-modules
-  (:require [clojure.java.io :as io]
+  (:require [cljfmt.main :as cljfmt]
             [clojure.edn :as edn]
-            [rewrite-clj.zip :as z]
+            [clojure.spec.alpha :as s]
             [exoscale.deps-modules.path :as p]
-            [clojure.spec.alpha :as s]))
+            [rewrite-clj.zip :as z]))
 
 (s/def :exoscale.deps/inherit
   (s/or :exoscale.deps.inherit/all #{:all}
@@ -113,6 +113,13 @@
           zloc)
         z/root-string)))
 
+(defn fmt
+  [s]
+  (#'cljfmt/reformat-string ; we could vendor that eventually
+   (assoc cljfmt/default-options
+          :split-keypairs-over-multiple-lines? true)
+   s))
+
 (defn merge-deps
   "Entry point via tools.build \"tool\""
   [opts]
@@ -122,7 +129,7 @@
         deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [file]
-            (let [deps-out (update-deps-versions versions file)]
+            (let [deps-out (fmt (update-deps-versions versions file))]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
@@ -182,7 +189,7 @@
         deps-files (find-deps-files opts)]
     ;; for all .deps.edn run update-deps-versions
     (run! (fn [file]
-            (let [deps-out (update-aliases versions file)]
+            (let [deps-out (fmt (update-aliases versions file))]
               (if dry-run?
                 (do
                   (println (apply str (repeat 80 "-")))
