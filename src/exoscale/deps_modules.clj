@@ -117,9 +117,7 @@
 
 (defn fmt
   [s opts]
-  (#'cljfmt/reformat-string ; we could vendor that eventually
-   opts
-   s))
+  (#'cljfmt/reformat-string opts s))
 
 (defn merge-deps
   "Entry point via tools.build \"tool\""
